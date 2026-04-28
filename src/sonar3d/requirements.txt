@@ -1,5 +1,3 @@
--r sonar3d/api/requirements.txt
-
-setuptools
+wlsonar
 numpy
-
+setuptools
