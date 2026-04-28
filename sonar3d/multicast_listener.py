@@ -95,7 +95,8 @@ class TimerNode(Node):
         del self._bitmap_cache[seq_id]
 
         header = Header()
-        header.stamp = self.get_clock().now().to_msg()
+        header.stamp.sec = range_msg.header.timestamp.seconds
+        header.stamp.nanosec = range_msg.header.timestamp.nanos
         header.frame_id = 'sonar_frame'
 
         voxels = wlsonar.range_image_to_xyz(range_msg)
