@@ -26,11 +26,15 @@ class TimerNode(Node):
 
         self.declare_parameter('IP', wlsonar.FALLBACK_IP)
         self.declare_parameter('speed_of_sound', 1491)  # setting this takes ~20s
+        self.declare_parameter('enable_acoustics', False)
+        self.declare_parameter('frame_id', 'sonar_frame')
+        self.declare_parameter('sample_frequency', 100.0)
 
         self.sonar_ip = self.get_parameter('IP').get_parameter_value().string_value
         self.sonar_speed_of_sound = self.get_parameter('speed_of_sound').get_parameter_value().integer_value
+        self.sonar_frame_id = self.get_parameter('frame_id').get_parameter_value().string_value
 
-        sample_time = 0.01
+        sample_time = 1.0 / self.get_parameter('sample_frequency').get_parameter_value().double_value
         self.create_timer(sample_time, self.timer_callback)
         self.get_logger().info(f'Timer Node initialized at {1/sample_time:.0f} Hz')
 
@@ -39,7 +43,9 @@ class TimerNode(Node):
         self.signal_image_publisher_ = self.create_publisher(Image, 'sonar_signal_image', 10)
 
         sonar = wlsonar.Sonar3D(self.sonar_ip)
-        # sonar.set_acoustics_enabled(True)  # Don't default on
+        if self.get_parameter('enable_acoustics').get_parameter_value().bool_value:
+            sonar.set_acoustics_enabled(True)  # Default off. 
+        
         sonar.set_udp_multicast()
         self.get_logger().info('UDP multicast enabled')
 
@@ -97,7 +103,7 @@ class TimerNode(Node):
         header = Header()
         header.stamp.sec = range_msg.header.timestamp.seconds
         header.stamp.nanosec = range_msg.header.timestamp.nanos
-        header.frame_id = 'sonar_frame'
+        header.frame_id = self.sonar_frame_id
 
         voxels = wlsonar.range_image_to_xyz(range_msg)
         strengths = wlsonar.bitmap_image_to_strength_log(bitmap_msg)
