@@ -4,8 +4,9 @@
 
 This package provides a ROS 2 driver for the **Water Linked Sonar 3D-15**, a real-time multibeam imaging sonar. The sonar streams 3D range images over UDP multicast, which are decoded and published as standard ROS messages:
 
-- 3D point clouds: `sensor_msgs/PointCloud2` on `/sonar_point_cloud`
+- 3D point clouds with intensity: `sensor_msgs/PointCloud2` on `/sonar_point_cloud`
 - Raw range images: `sensor_msgs/Image` on `/sonar_range_image`
+- Signal strength images: `sensor_msgs/Image` on `/sonar_signal_image`
 
 The driver listens to RIP1 multicast packets, extracts and parses `RangeImage` protobuf messages, and converts the sonar data into formats usable by standard ROS visualization and processing tools.
 
@@ -22,10 +23,11 @@ The driver listens to RIP1 multicast packets, extracts and parses `RangeImage` p
 
 ## Topics
 
-| Topic               | Message Type              | Description                        |
-|--------------------|---------------------------|------------------------------------|
-| `/sonar_point_cloud` | `sensor_msgs/PointCloud2` | 3D point cloud in ROS frame        |
-| `/sonar_range_image` | `sensor_msgs/Image`       | Raw float32 range image (in meters) |
+| Topic                | Message Type              | Description                                        |
+|----------------------|---------------------------|----------------------------------------------------|
+| `/sonar_point_cloud` | `sensor_msgs/PointCloud2` | 3D point cloud with x, y, z, intensity fields      |
+| `/sonar_range_image` | `sensor_msgs/Image`       | float32 range image (meters, encoding `32FC1`)     |
+| `/sonar_signal_image`| `sensor_msgs/Image`       | float32 linear signal strength image (encoding `32FC1`) |
 
 ---
 
