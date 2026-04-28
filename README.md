@@ -2,82 +2,102 @@
 
 ## Overview
 
-This package provides a ROS 2 driver for the **Water Linked Sonar 3D-15**, a real-time multibeam imaging sonar. The sonar streams 3D range images over UDP multicast, which are decoded and published as standard ROS messages:
+This package provides a ROS 2 driver for the **Water Linked Sonar 3D-15**, a real-time multibeam imaging sonar. The sonar streams 3D range images over UDP multicast using the **RIP2** protocol, which are decoded and published as standard ROS messages:
 
 - 3D point clouds with intensity: `sensor_msgs/PointCloud2` on `/sonar_point_cloud`
 - Raw range images: `sensor_msgs/Image` on `/sonar_range_image`
 - Signal strength images: `sensor_msgs/Image` on `/sonar_signal_image`
 
-The driver listens to RIP1 multicast packets, extracts and parses `RangeImage` protobuf messages, and converts the sonar data into formats usable by standard ROS visualization and processing tools.
-
----
-
-## Features
-
-- Receives and decodes **RIP1** packets via UDP multicast
-- Publishes point clouds and range images at real-time rates
-- Automatically enables sonar acoustics and udp multicast on startup
-- Compatible with ROS 2 (tested on **Jazzy**)
+Compatible with ROS 2 (tested on **Jazzy**).
 
 ---
 
 ## Topics
 
-| Topic                | Message Type              | Description                                        |
-|----------------------|---------------------------|----------------------------------------------------|
-| `/sonar_point_cloud` | `sensor_msgs/PointCloud2` | 3D point cloud with x, y, z, intensity fields      |
-| `/sonar_range_image` | `sensor_msgs/Image`       | float32 range image (meters, encoding `32FC1`)     |
-| `/sonar_signal_image`| `sensor_msgs/Image`       | float32 linear signal strength image (encoding `32FC1`) |
+| Topic                 | Message Type              | Description                                             |
+|-----------------------|---------------------------|---------------------------------------------------------|
+| `/sonar_point_cloud`  | `sensor_msgs/PointCloud2` | 3D point cloud with `x, y, z, intensity` fields         |
+| `/sonar_range_image`  | `sensor_msgs/Image`       | float32 range image in meters (`32FC1`)                 |
+| `/sonar_signal_image` | `sensor_msgs/Image`       | float32 log signal strength per pixel (`32FC1`, 0–255)  |
+
+For stable color display of `/sonar_point_cloud` in RViz: set **Color Transformer → Intensity**, uncheck **Autocompute Intensity Bounds**, and set **Min = 0 / Max = 255**.
 
 ---
 
-## Usage
+## Parameters
 
-### 1. Clone the repository into your ros2 workspace
+| Parameter          | Default            | Description                                         |
+|--------------------|--------------------|-----------------------------------------------------|
+| `IP`               | `192.168.194.96`   | IP address of the Sonar 3D-15                       |
+| `speed_of_sound`   | `1491`             | Speed of sound in m/s (note: changing this takes ~20s on the sonar) |
+| `enable_acoustics` | `false`            | Enable sonar acoustics on startup                   |
+| `frame_id`         | `sonar_frame`      | TF frame ID stamped on all published messages       |
+| `sample_frequency` | `100.0`            | Timer frequency in Hz for the UDP receive loop      |
+
+---
+
+## Setup
+
+### 1. Clone into your ROS 2 workspace
 
 ```bash
 cd ~/ros2_ws/src
-git clone --recurse-submodules https://github.com/waterlinked/Sonar-3D-15-ROS-driver.git
+git clone https://github.com/waterlinked/Sonar-3D-15-ROS-driver.git
 ```
 
-### 2. Install requirements
-
-Install requirements:
+### 2. Install Python dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r Sonar-3D-15-ROS-driver/requirements.txt
 ```
 
-
-### 3. Set IP-address of Sonar 3D-15
-
-Change to your sonars IP-address in the sonar3d.launch.py file:
-
-```python
-    {'IP': '192.168.194.96'},  # Change to your sonar IP, '192.168.194.96' is the fallback ip.
-```
-Alternatively, you can modify the default parameter in `multicast_listener.py` directly.
-
-```python
-    self.declare_parameter('IP', '192.168.194.96')#  <-- your sonar's IP here, '192.168.194.96' is the fallback ip.
-```
-
-### 4. Build the package from the root of your ros project
+### 3. Build
 
 ```bash
 cd ~/ros2_ws
-source /opt/ros/jazzy/setup.bash
+source /opt/ros/$ROS_DISTRO/setup.bash
 colcon build --packages-select sonar3d
 source install/local_setup.bash
 ```
 
-### 5. Run the package
+---
 
-```bash
-ros2 launch sonar3d sonar3d.launch.py
+## Configuration
+
+Parameters can be set two ways:
+
+### Option A — Edit `config/params.yaml`
+
+```yaml
+sonar_node:
+  ros__parameters:
+    IP: 192.168.194.96
+    speed_of_sound: 1491
+    enable_acoustics: false
+    frame_id: sonar_frame
+    sample_frequency: 100.0
 ```
 
-### 6. License
+Then launch with the config-file launch file:
+
+```bash
+ros2 launch sonar3d sonar3d_launch.py
+```
+
+A custom config file path can be passed at launch time:
+
+```bash
+ros2 launch sonar3d sonar3d_launch.py params_file:=/path/to/your/params.yaml
+```
+
+### Option B — Pass arguments directly at launch
+
+```bash
+ros2 launch sonar3d sonar3d.launch.py ip:=192.168.2.96 speed_of_sound:=1500
+```
+
+---
+
+## License
 
 This package is distributed under the MIT License.
-
