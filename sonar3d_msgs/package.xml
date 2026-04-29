@@ -4,7 +4,7 @@
   <name>sonar3d_msgs</name>
   <version>0.0.0</version>
   <description>ROS 2 message definitions for the Water Linked Sonar 3D-15 protocol</description>
-  <maintainer email="support@waterlinked.com">Water Linked</maintainer>
+  <maintainer email="bjz-github@spwiz.com">Braden Meyers</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
