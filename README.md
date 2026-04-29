@@ -4,12 +4,12 @@
 
 ROS 2 driver for the **Water Linked Sonar 3D-15** multibeam imaging sonar. The sonar streams 3D range images over UDP multicast using the **RIP2** protocol (Snappy-compressed protobuf). This repo contains two packages:
 
-| Package | Build type | Description |
-|---|---|---|
-| `sonar3d_msgs` | `ament_cmake` | Custom message definitions matching the sonar wire protocol |
-| `sonar3d` | `ament_python` | Driver node — decodes packets and publishes |
+| Package | Description |
+|---|---|
+| `sonar3d_msgs` | Custom message definitions matching the sonar wire protocol |
+| `sonar3d` | Driver node — decodes packets and publishes |
 
-Compatible with ROS 2 (tested on **Jazzy**).
+Compatible with ROS 2 (tested on **Jazzy** and **Humble**).
 
 ---
 
