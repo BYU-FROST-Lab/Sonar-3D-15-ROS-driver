@@ -4,6 +4,10 @@ from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2, PointField, Image
 from sensor_msgs_py import point_cloud2
 from std_msgs.msg import Header
+from sonar3d_msgs.msg import (
+    RangeImage as RangeImageMsg,
+    BitmapImageGreyscale8 as BitmapImageGreyscale8Msg,
+)
 
 import numpy as np
 import wlsonar
@@ -41,6 +45,8 @@ class TimerNode(Node):
         self.pointcloud_publisher_ = self.create_publisher(PointCloud2, 'sonar_point_cloud', 10)
         self.range_image_publisher_ = self.create_publisher(Image, 'sonar_range_image', 10)
         self.signal_image_publisher_ = self.create_publisher(Image, 'sonar_signal_image', 10)
+        self.raw_range_publisher_ = self.create_publisher(RangeImageMsg, 'sonar_raw_range_image', 10)
+        self.raw_bitmap_publisher_ = self.create_publisher(BitmapImageGreyscale8Msg, 'sonar_raw_bitmap_image', 10)
 
         sonar = wlsonar.Sonar3D(self.sonar_ip)
         if self.get_parameter('enable_acoustics').get_parameter_value().bool_value:
@@ -80,8 +86,10 @@ class TimerNode(Node):
         seq_id = msg.header.sequence_id
 
         if isinstance(msg, rip.RangeImage):
+            self.raw_range_publisher_.publish(self._make_range_msg(msg))
             self._range_cache[seq_id] = msg
         elif isinstance(msg, rip.BitmapImageGreyscale8):
+            self.raw_bitmap_publisher_.publish(self._make_bitmap_msg(msg))
             if msg.type == rip.BitmapImageType.SIGNAL_STRENGTH_IMAGE:
                 self._bitmap_cache[seq_id] = msg
         else:
@@ -89,6 +97,38 @@ class TimerNode(Node):
 
         self._try_publish_pair(seq_id)
         self._evict_old_entries()
+
+    def _make_range_msg(self, msg: rip.RangeImage) -> RangeImageMsg:
+        out = RangeImageMsg()
+        out.header.timestamp.sec = msg.header.timestamp.seconds
+        out.header.timestamp.nanosec = msg.header.timestamp.nanos
+        out.header.sequence_id = msg.header.sequence_id
+        out.speed_of_sound = msg.speed_of_sound
+        out.range = msg.range
+        out.frequency = msg.frequency
+        out.width = msg.width
+        out.height = msg.height
+        out.fov_horizontal = msg.fov_horizontal
+        out.fov_vertical = msg.fov_vertical
+        out.image_pixel_scale = msg.image_pixel_scale
+        out.image_pixel_data = list(msg.image_pixel_data)
+        return out
+
+    def _make_bitmap_msg(self, msg: rip.BitmapImageGreyscale8) -> BitmapImageGreyscale8Msg:
+        out = BitmapImageGreyscale8Msg()
+        out.header.timestamp.sec = msg.header.timestamp.seconds
+        out.header.timestamp.nanosec = msg.header.timestamp.nanos
+        out.header.sequence_id = msg.header.sequence_id
+        out.speed_of_sound = msg.speed_of_sound
+        out.range = msg.range
+        out.frequency = msg.frequency
+        out.type = msg.type
+        out.width = msg.width
+        out.height = msg.height
+        out.fov_horizontal = msg.fov_horizontal
+        out.fov_vertical = msg.fov_vertical
+        out.image_pixel_data = msg.image_pixel_data
+        return out
 
     def _try_publish_pair(self, seq_id: int):
         range_msg = self._range_cache.get(seq_id)
